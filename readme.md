@@ -24,7 +24,7 @@ O objetivo é fornecer um **dashboard interativo** que consolida essas informaç
 ---
 
 ## 🛠️ Estrutura do Projeto
-
+```bash
 .
 ├── app/
 │   ├── src/
