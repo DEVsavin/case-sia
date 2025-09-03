@@ -1,1 +1,15 @@
+
+# Core
+streamlit
+pandas
 openai
+python-dotenv
+
+# Visualização
+plotly
+wordcloud
+matplotlib
+
+# Coleta de Dados
+requests
+apify-client

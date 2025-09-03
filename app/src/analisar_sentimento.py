@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # --- CONFIGURAÇÃO DA API OPENAI ---
-# O código agora busca a chave que foi carregada pelo load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
     print("ERRO: A variável de ambiente OPENAI_API_KEY não foi encontrada.")
@@ -31,7 +30,7 @@ def analisar_sentimento_openai(texto: str) -> str:
 
     # O "system prompt" instrui o modelo sobre como ele deve se comportar.
     system_prompt = (
-        "Você é um especialista em análise de sentimentos de notícias. "
+        "Você é um especialista em análise de sentimentos de notícias e posts de redes sociais. "
         "Sua tarefa é classificar o texto fornecido em uma de três categorias: "
         "Positivo, Negativo ou Neutro. "
         "Responda APENAS com uma única palavra: 'Positivo', 'Negativo' ou 'Neutro'."
@@ -59,24 +58,52 @@ def analisar_sentimento_openai(texto: str) -> str:
         print(f"Ocorreu um erro ao chamar a API da OpenAI: {e}")
         return "Erro na análise"
 
-# --- Bloco para testar a função ---
+# --- Bloco de Execução Principal ---
 if __name__ == '__main__':
+    # Define caminhos relativos para funcionar em qualquer computador
+    caminho_base = os.path.dirname(__file__)
+    
+    # --- 1. ANÁLISE DAS NOTÍCIAS ---
+    print("--- INICIANDO ANÁLISE DE SENTIMENTO DAS NOTÍCIAS ---")
+    caminho_noticias_entrada = os.path.join(caminho_base, '..', 'db', 'noticias_coletadas.csv')
+    caminho_noticias_saida = os.path.join(caminho_base, '..', 'db', 'noticias_processadas.csv')
+    
     try:
-        df = pd.read_csv('C:/Users/snoop/Documents/CODE/monitor_ia/app/db/noticias_coletadas.csv')
-
-        df['texto_completo'] = df['titulo'] + ' ' + df['descricao'].fillna('')
-
-        print("Iniciando a análise de sentimento com a API da OpenAI (usando dotenv)...")
-        print("Isso pode levar alguns minutos, dependendo do número de notícias...")
-
-        df['sentimento'] = df['texto_completo'].apply(analisar_sentimento_openai)
-
-        print("\nAnálise de sentimento concluída!")
-        print("Pré-visualização dos dados com sentimento:")
-        print(df[['titulo', 'sentimento']].head())
-
-        df.to_csv('C:/Users/snoop/Documents/CODE/monitor_ia/app/db/noticias_processadas.csv', index=False)
-        print("\nDados processados salvos em 'noticias_processadas.csv'")
+        df_noticias = pd.read_csv(caminho_noticias_entrada)
+        df_noticias['texto_completo'] = df_noticias['titulo'] + ' ' + df_noticias['descricao'].fillna('')
+        
+        print("Analisando notícias... Isso pode levar alguns minutos.")
+        df_noticias['sentimento'] = df_noticias['texto_completo'].apply(analisar_sentimento_openai)
+        
+        df_noticias.to_csv(caminho_noticias_saida, index=False)
+        print("\nAnálise de notícias concluída!")
+        print(f"Resultados salvos em '{os.path.basename(caminho_noticias_saida)}'")
+        print("Pré-visualização:")
+        print(df_noticias[['titulo', 'sentimento']].head())
 
     except FileNotFoundError:
-        print("Arquivo 'noticias_coletadas.csv' não encontrado. Execute o script 'coleta_dados.py' primeiro.")
+        print(f"\nERRO: Arquivo '{os.path.basename(caminho_noticias_entrada)}' não encontrado. Execute 'coleta_dados.py' primeiro.")
+
+    print("\n" + "="*50 + "\n") # Separador visual
+
+    # --- 2. ANÁLISE DO INSTAGRAM ---
+    print("--- INICIANDO ANÁLISE DE SENTIMENTO DO INSTAGRAM ---")
+    caminho_insta_entrada = os.path.join(caminho_base, '..', 'db', 'instagram_posts_mencoes.csv')
+    caminho_insta_saida = os.path.join(caminho_base, '..', 'db', 'instagram_processados.csv')
+    
+    try:
+        df_insta = pd.read_csv(caminho_insta_entrada)
+        df_insta['legenda'] = df_insta['legenda'].fillna('')
+
+        print("Analisando posts do Instagram... Isso pode levar alguns minutos.")
+        df_insta['sentimento'] = df_insta['legenda'].apply(analisar_sentimento_openai)
+        
+        df_insta.to_csv(caminho_insta_saida, index=False)
+        print("\nAnálise do Instagram concluída!")
+        print(f"Resultados salvos em '{os.path.basename(caminho_insta_saida)}'")
+        print("Pré-visualização:")
+        print(df_insta[['legenda', 'sentimento']].head())
+
+    except FileNotFoundError:
+        print(f"\nERRO: Arquivo '{os.path.basename(caminho_insta_entrada)}' não encontrado. Execute 'coleta_instagram.py' primeiro.")
+
